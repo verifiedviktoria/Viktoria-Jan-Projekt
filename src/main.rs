@@ -1,6 +1,7 @@
 use ggez::{
 	conf::WindowMode,event::{self,EventHandler},graphics::{self,Color,DrawMode,Mesh,Rect,Text},mint::Point2,Context,ContextBuilder,GameError,GameResult
 };
+use rand::{Rng};
 use std::time::{Duration, SystemTime};
 use std::thread::sleep;
 use ggez::winit::{self, dpi};
@@ -320,68 +321,9 @@ fn preset2(state: &mut State) {
 
 }
 fn preset3(state: &mut State) {
-	state.grid[1][2] = true;
-    state.grid[2][3] = true;
-    state.grid[3][3] = true;
-    state.grid[3][2] = true;
-    state.grid[4][2] = true;
-    state.grid[6][3] = true;
-    state.grid[8][3] = true;
-    state.grid[8][2] = true;
-    state.grid[9][2] = true;
-    state.grid[11][3] = true;
-    state.grid[13][3] = true;
-    state.grid[13][2] = true;
-    state.grid[14][2] = true;
-    state.grid[17][3] = true;
-    state.grid[18][3] = true;
-    state.grid[19][2] = true;
-
-    state.grid[5][5] = true;
-    state.grid[7][8] = true;
-    state.grid[10][12] = true;
-    state.grid[15][18] = true;
-    state.grid[20][25] = true;
-
-    state.grid[25][30] = true;
-    state.grid[30][35] = true;
-    state.grid[35][40] = true;
-    state.grid[40][1] = true;
-    state.grid[2][38] = true;
-
-    state.grid[3][10] = true;
-    state.grid[5][15] = true;
-    state.grid[10][20] = true;
-    state.grid[12][28] = true;
-    state.grid[18][32] = true;
-
-    state.grid[20][5] = true;
-    state.grid[22][10] = true;
-    state.grid[28][15] = true;
-    state.grid[32][20] = true;
-    state.grid[38][25] = true;
-
-    state.grid[1][30] = true;
-    state.grid[5][35] = true;
-    state.grid[10][38] = true;
-    state.grid[15][3] = true;
-    state.grid[20][12] = true;
-
-    state.grid[2][7] = true;
-    state.grid[6][12] = true;
-    state.grid[12][18] = true;
-    state.grid[18][22] = true;
-    state.grid[24][28] = true;
-
-    state.grid[32][5] = true;
-    state.grid[37][10] = true;
-    state.grid[2][15] = true;
-    state.grid[8][20] = true;
-    state.grid[14][25] = true;
-
-    state.grid[20][30] = true;
-    state.grid[26][35] = true;
-    state.grid[32][38] = true;
-    state.grid[5][1] = true;
-    state.grid[11][12] = true;
+	for _ in 0..500 {
+		let x = rng.gen_range(0..50);
+		let y = rng.gen_range(0..50);
+		state.grid[x][y] = true;
+	}
 }
