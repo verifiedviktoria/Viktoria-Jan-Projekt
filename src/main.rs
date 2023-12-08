@@ -6,8 +6,8 @@ use std::thread::sleep;
 use ggez::winit::{self, dpi};
 pub use winit::event::{MouseButton, ScanCode};
 
-const CELL_SIZE: (f32, f32) = (20.0, 20.0);
-const GRID_SIZE: (f32, f32) = (40.0, 40.0);
+const CELL_SIZE: (f32, f32) = (20.0, 20.0); // Zellgröße
+const GRID_SIZE: (f32, f32) = (40.0, 40.0);	// Anzahl Zellen
 const WINDOW_SIZE: (f32, f32) = (CELL_SIZE.0 * GRID_SIZE.0, CELL_SIZE.1 * GRID_SIZE.1);
 
 const BG_COLOR: Color = Color::WHITE;
@@ -27,6 +27,7 @@ struct State {
 	fps: u32,
 	running: bool,
 	mouse_down: bool,
+	mouse_up: bool,
 }
 
 impl State {
@@ -36,25 +37,31 @@ impl State {
 			fps: 1,
 			running: false,
 			mouse_down: false,
+			mouse_up: false,
 		}
 	}
 
-	
+	/* fn count_neighbours(&self) -> u16  {
 
+	}*/
+	fn rules(&mut self){
+		//Conways Game of Life
+		/*Rules:
+				1. live cell < 2 live neighbours dies
+				2. live cell > 3 live neighbours dies
+				3. live cell == 2 or 3 live neighbours lives
+				4. dead cell == 3 live neighbours lives
+		*/
+		let count_n = count_neighbours(&self); //count neighbours for 
+	}
 }
 
 impl EventHandler<GameError> for State{
 
 	fn update(&mut self, ctx: &mut ggez::Context) -> Result<(),GameError> {
-		
-		
-
-		/*for i in 0...GRID_SIZE.0 as usize{
-			for j in 0...GRID_SIZE.1 as usize{
-				
-			}
-		}*/
-
+		self.rules();
+		self.grid[3][4] ^= true;
+		// State::add_point(&mut self, 1, 2);
 		Ok(())
 
 	}
@@ -117,7 +124,7 @@ impl EventHandler<GameError> for State{
 						y: WINDOW_SIZE.1,
 					},
 				],
-				LINE_WIDTH,
+				LINE_WIDTH,https://prod.liveshare.vsengsaas.visualstudio.com/join?2A5832089B50027C87C7CB5CC098B64E10BE
 				LINE_COLOR,
 			)?;
 			graphics::draw(ctx, &line, (Point2 { x: 0.0, y: 0.0 },))?;
@@ -134,11 +141,23 @@ impl EventHandler<GameError> for State{
 	fn mouse_motion_event(
 		&mut self,
 		_ctx: &mut Context,
-		_x: f32,
-		_y: f32,
+		x: f32,
+		y: f32,
 		_dx: f32,
 		_dy: f32
-	) -> (){}
+	) -> (){
+		
+		}
+
+	
+	fn mouse_button_up_event(
+        &mut self,
+        _ctx: &mut Context,
+        _button: MouseButton,
+        x: f32,
+        y: f32,
+    ) -> () { self.mouse_up = true;}
+        
 
 	fn mouse_button_down_event(
         &mut self,
@@ -147,12 +166,13 @@ impl EventHandler<GameError> for State{
         x: f32,
         y: f32,
     ) -> () {
-		
-        
+		// self.mouse_down = true;
+        //while self.mouse_up{
 					self.grid[(x / CELL_SIZE.0).floor() as usize][(y / CELL_SIZE.1).floor() as usize] ^= true;
-    }
+	    //}
+	}
 
-
+	
 	
 
 }
@@ -161,7 +181,6 @@ impl EventHandler<GameError> for State{
 fn main() -> GameResult {
 	let mut state = State::new();
 	state.grid[1][2] = true;
-	
 	
 	let (ctx, event_loop) = ContextBuilder::new("Conway's Game of Life", "mathletedev")
 		.window_mode(WindowMode::default().dimensions(WINDOW_SIZE.0, WINDOW_SIZE.1))
