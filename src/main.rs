@@ -41,9 +41,21 @@ impl State {
 		}
 	}
 
-	/* fn count_neighbours(&self) -> u16  {
+	fn count_neighbours(&self,x:usize,y:usize) -> u16  {
+		let mut count = 0;
+		for i in x-1..x+1 {
+			for j in y-1..y+1 {
+				if self.grid[i as usize][j as usize] == true {
+					if i == x && j == y {
+							continue;
+					}
+					count += 1;
+				}
+			}
+		}
+		count
+	}
 
-	}*/
 	fn rules(&mut self){
 		//Conways Game of Life
 		/*Rules:
@@ -52,7 +64,30 @@ impl State {
 				3. live cell == 2 or 3 live neighbours lives
 				4. dead cell == 3 live neighbours lives
 		*/
-		let count_n = count_neighbours(&self); //count neighbours for 
+		for (i,row) in self.grid.iter_mut().enumerate()  {
+				for (j,col) in row.iter_mut().enumerate() {
+						//count neighbours
+						// let count_n = self.count_neighbours(i,j); //count neighbours for given cell
+						// //evaluate rules
+						// if *col == true {
+						// 	if count_n < 2 {
+						// 			//cell dies
+						// 			self.grid[i][j] = false;
+						// 	} else if count_n > 3 {
+						// 			//cell dies
+						// 			self.grid[i][j] = false;
+						// 	} else if count_n == 2 || count_n == 3 {
+						// 			//cell lives
+						// 			self.grid[i][j] = true;
+						// 	}
+						// }else {
+						// 	if count_n == 3 {
+						// 			//cell lives
+						// 			self.grid[i][j] = true;
+						// 	}
+						// }
+				}
+		}		
 	}
 }
 
@@ -60,7 +95,7 @@ impl EventHandler<GameError> for State{
 
 	fn update(&mut self, ctx: &mut ggez::Context) -> Result<(),GameError> {
 		self.rules();
-		self.grid[3][4] ^= true;
+		// self.grid[3][4] ^= true;
 		// State::add_point(&mut self, 1, 2);
 		Ok(())
 
@@ -124,7 +159,7 @@ impl EventHandler<GameError> for State{
 						y: WINDOW_SIZE.1,
 					},
 				],
-				LINE_WIDTH,https://prod.liveshare.vsengsaas.visualstudio.com/join?2A5832089B50027C87C7CB5CC098B64E10BE
+				LINE_WIDTH,
 				LINE_COLOR,
 			)?;
 			graphics::draw(ctx, &line, (Point2 { x: 0.0, y: 0.0 },))?;
@@ -147,8 +182,7 @@ impl EventHandler<GameError> for State{
 		_dy: f32
 	) -> (){
 		
-		}
-
+	}
 	
 	fn mouse_button_up_event(
         &mut self,
@@ -166,7 +200,7 @@ impl EventHandler<GameError> for State{
         x: f32,
         y: f32,
     ) -> () {
-		// self.mouse_down = true;
+		//self.mouse_down = true;
         //while self.mouse_up{
 					self.grid[(x / CELL_SIZE.0).floor() as usize][(y / CELL_SIZE.1).floor() as usize] ^= true;
 	    //}
