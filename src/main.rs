@@ -322,8 +322,8 @@ fn preset2(state: &mut State) {
 }
 fn preset3(state: &mut State) {
 	for _ in 0..500 {
-		let x = rng.gen_range(0..50);
-		let y = rng.gen_range(0..50);
+		let x = rand::thread_rng().gen_range(0..50);
+		let y = rand::thread_rng().gen_range(0..50);
 		state.grid[x][y] = true;
 	}
 }
