@@ -6,8 +6,8 @@ use std::thread::sleep;
 use ggez::winit::{self, dpi};
 pub use winit::event::{MouseButton, ScanCode};
 
-const CELL_SIZE: (f32, f32) = (20.0, 20.0); // Zellgröße
-const GRID_SIZE: (f32, f32) = (40.0, 40.0);	// Anzahl Zellen
+const CELL_SIZE: (f32, f32) = (10.0, 10.0); // Zellgröße
+const GRID_SIZE: (f32, f32) = (51.0, 51.0);	// Anzahl Zellen
 const WINDOW_SIZE: (f32, f32) = (CELL_SIZE.0 * GRID_SIZE.0, CELL_SIZE.1 * GRID_SIZE.1);
 
 const BG_COLOR: Color = Color::WHITE;
@@ -43,8 +43,15 @@ impl State {
 
 	fn count_neighbours(&self,x:usize,y:usize) -> u16  {
 		let mut count = 0;
-		for i in x-1..x+1 {
-			for j in y-1..y+1 {
+		// Define the range of valid indices
+    let x_start = x.saturating_sub(1);
+    let x_end = (x + 1).min(self.grid.len() - 1);
+
+    let y_start = y.saturating_sub(1);
+    let y_end = (y + 1).min(self.grid[0].len() - 1);
+
+    for i in x_start..=x_end {
+        for j in y_start..=y_end {
 				if self.grid[i as usize][j as usize] == true {
 					if i == x && j == y {
 							continue;
@@ -64,37 +71,45 @@ impl State {
 				3. live cell == 2 or 3 live neighbours lives
 				4. dead cell == 3 live neighbours lives
 		*/
-		for (i,row) in self.grid.iter_mut().enumerate()  {
-				for (j,col) in row.iter_mut().enumerate() {
+		let mut new_grid = self.grid.clone();
+		for (i,row) in self.grid.iter().enumerate()  {
+				for (j,col) in row.iter().enumerate() {
 						//count neighbours
-						// let count_n = self.count_neighbours(i,j); //count neighbours for given cell
-						// //evaluate rules
-						// if *col == true {
-						// 	if count_n < 2 {
-						// 			//cell dies
-						// 			self.grid[i][j] = false;
-						// 	} else if count_n > 3 {
-						// 			//cell dies
-						// 			self.grid[i][j] = false;
-						// 	} else if count_n == 2 || count_n == 3 {
-						// 			//cell lives
-						// 			self.grid[i][j] = true;
-						// 	}
-						// }else {
-						// 	if count_n == 3 {
-						// 			//cell lives
-						// 			self.grid[i][j] = true;
-						// 	}
-						// }
+						let count_n = self.count_neighbours(i,j); //count neighbours for given cell
+						// let count_n = 2;
+						
+						//evaluate rules
+						if *col == true {
+							if count_n < 2 {
+									//cell dies
+									// *col = false;
+									new_grid[i][j] = false;
+							} else if count_n > 3 {
+									//cell dies
+									// *col = false;
+									new_grid[i][j] = false;
+							} else if count_n == 2 || count_n == 3 {
+									//cell lives
+									// *col = true;
+									new_grid[i][j] = true;
+							}
+						}else {
+							if count_n == 3 {
+									//cell lives
+									// *col = true;
+									new_grid[i][j] = true;
+							}
+						}
 				}
-		}		
+		}
+		self.grid = new_grid;		
 	}
 }
 
 impl EventHandler<GameError> for State{
 
 	fn update(&mut self, ctx: &mut ggez::Context) -> Result<(),GameError> {
-		self.rules();
+		// self.rules();
 		// self.grid[3][4] ^= true;
 		// State::add_point(&mut self, 1, 2);
 		Ok(())
@@ -214,11 +229,159 @@ impl EventHandler<GameError> for State{
 
 fn main() -> GameResult {
 	let mut state = State::new();
-	state.grid[1][2] = true;
+	preset3(&mut state);
 	
 	let (ctx, event_loop) = ContextBuilder::new("Conway's Game of Life", "mathletedev")
 		.window_mode(WindowMode::default().dimensions(WINDOW_SIZE.0, WINDOW_SIZE.1))
 		.build()?;
 
 	event::run(ctx, event_loop, state);
+}
+
+fn preset1(state: &mut State) {
+		state.grid[1][2] = true;
+		state.grid[2][3] = true;
+		state.grid[3][3] = true;
+		state.grid[3][2] = true;
+		state.grid[4][2] = true;
+		state.grid[6][3] = true;
+		state.grid[8][3] = true;
+		state.grid[8][2] = true;
+		state.grid[9][2] = true;
+		state.grid[11][3] = true;
+		state.grid[13][3] = true;
+		state.grid[13][2] = true;
+		state.grid[14][2] = true;
+		state.grid[17][3] = true;
+		state.grid[18][3] = true;
+		state.grid[19][2] = true;
+
+		state.grid[5][5] = true;
+		state.grid[7][8] = true;
+		state.grid[10][12] = true;
+		state.grid[15][18] = true;
+		state.grid[20][25] = true;
+
+		state.grid[25][30] = true;
+		state.grid[30][35] = true;
+		state.grid[35][40] = true;
+		state.grid[40][1] = true;
+		state.grid[2][38] = true;
+}
+
+fn preset2(state: &mut State) {
+
+	state.grid[1][2] = true;
+	state.grid[2][3] = true;
+	state.grid[3][3] = true;
+	state.grid[3][2] = true;
+	state.grid[4][2] = true;
+	state.grid[6][3] = true;
+	state.grid[8][3] = true;
+	state.grid[8][2] = true;
+	state.grid[9][2] = true;
+	state.grid[11][3] = true;
+	state.grid[13][3] = true;
+	state.grid[13][2] = true;
+	state.grid[14][2] = true;
+	state.grid[17][3] = true;
+	state.grid[18][3] = true;
+	state.grid[19][2] = true;
+
+	state.grid[5][5] = true;
+	state.grid[7][8] = true;
+	state.grid[10][12] = true;
+	state.grid[15][18] = true;
+	state.grid[20][25] = true;
+
+	state.grid[25][30] = true;
+	state.grid[30][35] = true;
+	state.grid[35][40] = true;
+	state.grid[40][1] = true;
+	state.grid[2][38] = true;
+
+	state.grid[3][10] = true;
+	state.grid[5][15] = true;
+	state.grid[10][20] = true;
+	state.grid[12][28] = true;
+	state.grid[18][32] = true;
+
+	state.grid[20][5] = true;
+	state.grid[22][10] = true;
+	state.grid[28][15] = true;
+	state.grid[32][20] = true;
+	state.grid[38][25] = true;
+
+	state.grid[1][30] = true;
+	state.grid[5][35] = true;
+	state.grid[10][38] = true;
+	state.grid[15][3] = true;
+	state.grid[20][12] = true;
+
+}
+fn preset3(state: &mut State) {
+	state.grid[1][2] = true;
+    state.grid[2][3] = true;
+    state.grid[3][3] = true;
+    state.grid[3][2] = true;
+    state.grid[4][2] = true;
+    state.grid[6][3] = true;
+    state.grid[8][3] = true;
+    state.grid[8][2] = true;
+    state.grid[9][2] = true;
+    state.grid[11][3] = true;
+    state.grid[13][3] = true;
+    state.grid[13][2] = true;
+    state.grid[14][2] = true;
+    state.grid[17][3] = true;
+    state.grid[18][3] = true;
+    state.grid[19][2] = true;
+
+    state.grid[5][5] = true;
+    state.grid[7][8] = true;
+    state.grid[10][12] = true;
+    state.grid[15][18] = true;
+    state.grid[20][25] = true;
+
+    state.grid[25][30] = true;
+    state.grid[30][35] = true;
+    state.grid[35][40] = true;
+    state.grid[40][1] = true;
+    state.grid[2][38] = true;
+
+    state.grid[3][10] = true;
+    state.grid[5][15] = true;
+    state.grid[10][20] = true;
+    state.grid[12][28] = true;
+    state.grid[18][32] = true;
+
+    state.grid[20][5] = true;
+    state.grid[22][10] = true;
+    state.grid[28][15] = true;
+    state.grid[32][20] = true;
+    state.grid[38][25] = true;
+
+    state.grid[1][30] = true;
+    state.grid[5][35] = true;
+    state.grid[10][38] = true;
+    state.grid[15][3] = true;
+    state.grid[20][12] = true;
+
+    state.grid[2][7] = true;
+    state.grid[6][12] = true;
+    state.grid[12][18] = true;
+    state.grid[18][22] = true;
+    state.grid[24][28] = true;
+
+    state.grid[32][5] = true;
+    state.grid[37][10] = true;
+    state.grid[2][15] = true;
+    state.grid[8][20] = true;
+    state.grid[14][25] = true;
+
+    state.grid[20][30] = true;
+    state.grid[26][35] = true;
+    state.grid[32][38] = true;
+    state.grid[5][1] = true;
+    state.grid[11][12] = true;
 }
