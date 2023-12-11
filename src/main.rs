@@ -7,8 +7,8 @@ use std::thread::sleep;
 use ggez::winit::{self, dpi};
 pub use winit::event::{MouseButton, ScanCode};
 
-const CELL_SIZE: (f32, f32) = (10.0, 10.0); // Zellgröße
-const GRID_SIZE: (f32, f32) = (51.0, 51.0);	// Anzahl Zellen
+const CELL_SIZE: (f32, f32) = (20.0, 20.0); // Zellgröße
+const GRID_SIZE: (f32, f32) = (43.0, 43.0);	// Anzahl Zellen
 const WINDOW_SIZE: (f32, f32) = (CELL_SIZE.0 * GRID_SIZE.0, CELL_SIZE.1 * GRID_SIZE.1);
 
 const BG_COLOR: Color = Color::WHITE;
@@ -110,7 +110,7 @@ impl State {
 impl EventHandler<GameError> for State{
 
 	fn update(&mut self, ctx: &mut ggez::Context) -> Result<(),GameError> {
-		// self.rules();
+		self.rules();
 		// self.grid[3][4] ^= true;
 		// State::add_point(&mut self, 1, 2);
 		Ok(())
@@ -322,8 +322,8 @@ fn preset2(state: &mut State) {
 }
 fn preset3(state: &mut State) {
 	for _ in 0..500 {
-		let x = rand::thread_rng().gen_range(0..50);
-		let y = rand::thread_rng().gen_range(0..50);
+		let x = rand::thread_rng().gen_range(0..40);
+		let y = rand::thread_rng().gen_range(0..40);
 		state.grid[x][y] = true;
 	}
 }
