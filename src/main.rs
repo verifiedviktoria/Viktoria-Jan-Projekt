@@ -3,13 +3,15 @@ use ggez::{
 };
 use rand::{Rng};
 use std::time::{Duration, SystemTime};
+use crate::event::{KeyCode,KeyMods};
 use std::thread::sleep;
 use ggez::winit::{self, dpi};
 pub use winit::event::{MouseButton, ScanCode};
 
 const CELL_SIZE: (f32, f32) = (20.0, 20.0); // Zellgröße
 const GRID_SIZE: (f32, f32) = (43.0, 43.0);	// Anzahl Zellen
-const WINDOW_SIZE: (f32, f32) = (CELL_SIZE.0 * GRID_SIZE.0, CELL_SIZE.1 * GRID_SIZE.1);
+const MENU_SIZE: f32 = 5.0; // Höhe des Menüs
+const WINDOW_SIZE: (f32, f32) = (CELL_SIZE.0 * GRID_SIZE.0, CELL_SIZE.1 * (GRID_SIZE.1 + MENU_SIZE)); // Fenstergröße
 
 const BG_COLOR: Color = Color::WHITE;
 const CELL_COLOR: Color = Color::BLACK;
@@ -22,11 +24,21 @@ const LINE_COLOR: Color = Color {
 };
 const TEXT_COLOR: Color = Color::BLACK;
 
+// Menu
+const BUTTON_COLOR: Color = Color::new(0.827, 0.827, 0.827, 1.0);
+const BUTTON_WIDTH: f32 = 5.0 * CELL_SIZE.0;
+const BUTTON_HEIGHT: f32 = 2.0 * CELL_SIZE.1;
+const MENU_START: f32 = WINDOW_SIZE.1 - MENU_SIZE * CELL_SIZE.1;
+const START_X: f32 = WINDOW_SIZE.0/2.0 - 2.0*BUTTON_WIDTH;
+const NEXT_X: f32 = WINDOW_SIZE.0/2.0;
+const CLEAR_X: f32 = WINDOW_SIZE.0/2.0 + 2.0*BUTTON_WIDTH;
+
 
 struct State {
 	grid: Vec<Vec<bool>>,
-	fps: u32,
-	running: bool,
+	fps: u32, 
+	running: bool, 
+	drawn: bool, // true if static objects have been drawn
 	mouse_down: bool,
 	mouse_up: bool,
 }
@@ -37,6 +49,7 @@ impl State {
 			grid: vec![vec![false; GRID_SIZE.1 as usize]; GRID_SIZE.0 as usize],
 			fps: 1,
 			running: false,
+			drawn: false,
 			mouse_down: false,
 			mouse_up: false,
 		}
@@ -105,12 +118,28 @@ impl State {
 		}
 		self.grid = new_grid;		
 	}
+
+	fn start(&mut self) {
+		println!("Start/Pause button pressed");
+		self.running ^= true;
+	}
+
+	fn next(&mut self) {
+			println!("Next button pressed");
+	}
+
+	fn clear(&mut self) {
+			println!("Clear button pressed");
+			self.grid = vec![vec![false; GRID_SIZE.1 as usize]; GRID_SIZE.0 as usize];
+	}
 }
 
 impl EventHandler<GameError> for State{
 
 	fn update(&mut self, ctx: &mut ggez::Context) -> Result<(),GameError> {
-		self.rules();
+		if self.running {
+			self.rules();
+		}
 		// self.grid[3][4] ^= true;
 		// State::add_point(&mut self, 1, 2);
 		Ok(())
@@ -119,7 +148,7 @@ impl EventHandler<GameError> for State{
 
 	fn draw(&mut self, ctx: &mut Context) -> GameResult {
 		graphics::clear(ctx, BG_COLOR);
-
+		// Draw the cells
 		for i in 0..GRID_SIZE.0 as usize {
 			for j in 0..GRID_SIZE.1 as usize {
 				if self.grid[i][j] {
@@ -136,21 +165,52 @@ impl EventHandler<GameError> for State{
 					)?;
 					graphics::draw(ctx, &rect, (Point2 { x: 0.0, y: 0.0 },))?;
 				}
+			}
+		}
 
-				if j == 0 {
+		// let text = Text::new(self.fps.to_string());
+		// graphics::draw(ctx, &text, (Point2 { x: 0.0, y: 2.0 }, TEXT_COLOR))?; //NUMBER
+		
+		if !self.drawn {
+			// Draw the grid
+			for i in 0..GRID_SIZE.0 as usize {
+				for j in 0..GRID_SIZE.1 as usize {	
+					if j == 0 {
+						continue;
+					}
+	
+					let line = Mesh::new_line(
+						ctx,
+						&vec![
+							Point2 {
+								x: 0.0,
+								y: j as f32 * CELL_SIZE.1,
+							},
+							Point2 {
+								x: WINDOW_SIZE.0,
+								y: j as f32 * CELL_SIZE.1,
+							},
+						],
+						LINE_WIDTH,
+						LINE_COLOR,
+					)?;
+					graphics::draw(ctx, &line, (Point2 { x: 0.0, y: 0.0 },))?;
+				}
+	
+				if i == 0 {
 					continue;
 				}
-
+	
 				let line = Mesh::new_line(
 					ctx,
 					&vec![
 						Point2 {
-							x: 0.0,
-							y: j as f32 * CELL_SIZE.1,
+							x: i as f32 * CELL_SIZE.0,
+							y: 0.0,
 						},
 						Point2 {
-							x: WINDOW_SIZE.0,
-							y: j as f32 * CELL_SIZE.1,
+							x: i as f32 * CELL_SIZE.0,
+							y: WINDOW_SIZE.1-MENU_SIZE*CELL_SIZE.1,
 						},
 					],
 					LINE_WIDTH,
@@ -159,30 +219,44 @@ impl EventHandler<GameError> for State{
 				graphics::draw(ctx, &line, (Point2 { x: 0.0, y: 0.0 },))?;
 			}
 
-			if i == 0 {
-				continue;
-			}
+			// Draw the menu section with buttons
+			// Create text for buttons
+			let start_button_text = Text::new("Start/Pause"); 
+			let next_button_text = Text::new("Next");  
+			let clear_button_text = Text::new("Clear");
 
-			let line = Mesh::new_line(
+			let button_start = Mesh::new_rectangle(
 				ctx,
-				&vec![
-					Point2 {
-						x: i as f32 * CELL_SIZE.0,
-						y: 0.0,
-					},
-					Point2 {
-						x: i as f32 * CELL_SIZE.0,
-						y: WINDOW_SIZE.1,
-					},
-				],
-				LINE_WIDTH,
-				LINE_COLOR,
+				DrawMode::fill(),
+				Rect::new(START_X, MENU_START, BUTTON_WIDTH, BUTTON_HEIGHT),
+				BUTTON_COLOR,
 			)?;
-			graphics::draw(ctx, &line, (Point2 { x: 0.0, y: 0.0 },))?;
-		}
+			
+			let button_next = Mesh::new_rectangle(
+					ctx,
+					DrawMode::fill(),
+					Rect::new(NEXT_X, MENU_START, BUTTON_WIDTH, BUTTON_HEIGHT),
+					BUTTON_COLOR,
+			)?;
+			
+			let button_clear = Mesh::new_rectangle(
+					ctx,
+					DrawMode::fill(),
+					Rect::new(CLEAR_X, MENU_START, BUTTON_WIDTH, BUTTON_HEIGHT),
+					BUTTON_COLOR,
+			)?;
 
-		/*let text = Text::new(self.fps.to_string());
-		graphics::draw(ctx, &text, (Point2 { x: 0.0, y: 2.0 }, TEXT_COLOR))?;*/  //NUMBER
+			// Draw buttons
+			graphics::draw(ctx, &button_start, (Point2 { x: 0.0, y: 0.0 },))?;
+			graphics::draw(ctx, &start_button_text, (Point2 { x:START_X + 0.05*BUTTON_WIDTH, y: MENU_START + 0.5 * CELL_SIZE.1 },))?;
+
+			graphics::draw(ctx, &button_next, (Point2 { x: 0.0, y: 0.0 },))?;
+			graphics::draw(ctx, &next_button_text, (Point2 { x: NEXT_X + 0.3 * BUTTON_WIDTH, y: MENU_START + 0.5 * CELL_SIZE.1 },))?;
+
+			graphics::draw(ctx, &button_clear, (Point2 { x: 0.0, y: 0.0 },))?;
+			graphics::draw(ctx, &clear_button_text, (Point2 { x: CLEAR_X + 0.3 * BUTTON_WIDTH, y: MENU_START + 0.5 * CELL_SIZE.1 },))?;
+			self.drawn = false;
+		}
 
 		graphics::present(ctx)?;
 
@@ -218,28 +292,74 @@ impl EventHandler<GameError> for State{
     ) -> () {
 		//self.mouse_down = true;
         //while self.mouse_up{
-					self.grid[(x / CELL_SIZE.0).floor() as usize][(y / CELL_SIZE.1).floor() as usize] ^= true;
+					// check if mouse is in grid
+					if y/CELL_SIZE.1 < GRID_SIZE.1 {
+						self.grid[(x / CELL_SIZE.0).floor() as usize][(y / CELL_SIZE.1).floor() as usize] ^= true;
+					}else {
+						// check if mouse is in menu
+						if y >= MENU_START && y <= MENU_START + BUTTON_HEIGHT {
+							// check if mouse is in start button
+							if x >= START_X && x <= START_X + BUTTON_WIDTH {
+								self.start();
+							}
+							// check if mouse is in next button
+							if x >= NEXT_X && x <= NEXT_X + BUTTON_WIDTH {
+								self.next();
+							}
+							// check if mouse is in reset button
+							if x >= CLEAR_X && x <= CLEAR_X + BUTTON_WIDTH {
+								self.clear();
+							}
+						}
+					} 
 	    //}
 	}
 
-	
-	
-
+	fn key_down_event(&mut self, _ctx: &mut Context, keycode: KeyCode, _keymods: KeyMods, _repeat: bool) {
+		match keycode {
+				KeyCode::Space => self.start(),
+				KeyCode::N => self.next(),
+				KeyCode::Escape => std::process::exit(0),
+				KeyCode::C => self.clear(),
+				KeyCode::Key1 => preset1(self),
+				KeyCode::Key2 => preset2(self),
+				KeyCode::Key3 => preset3(self),
+				KeyCode::Key4 => self.fps = 1,
+				KeyCode::Key5 => self.fps = 5,
+				KeyCode::Key6 => self.fps = 2,
+				_ => (),
+		}
+	}
 }
 
 
 fn main() -> GameResult {
 	let mut state = State::new();
 	preset3(&mut state);
-	
-	let (ctx, event_loop) = ContextBuilder::new("Conway's Game of Life", "mathletedev")
+	println!("Welcome to Conway's Game of Life!");
+	println!("Press Space to start/pause, N for next generation, R to reset, C to clear and Esc to exit.");
+	println!("Keys 1-3 set Preset, 4-6 set FPS.");
+	println!("Click on a cell to toggle it's state.");
+	let (ctx, event_loop) = ContextBuilder::new("Conway's Game of Life", "VikiUndJan")
 		.window_mode(WindowMode::default().dimensions(WINDOW_SIZE.0, WINDOW_SIZE.1))
 		.build()?;
 
 	event::run(ctx, event_loop, state);
 }
 
+fn preset3(state: &mut State) {
+	println!("Preset 3");
+	state.clear();
+	for _ in 0..500 {
+		let x = rand::thread_rng().gen_range(0..GRID_SIZE.0 as usize);
+		let y = rand::thread_rng().gen_range(0..GRID_SIZE.1 as usize);
+		state.grid[x][y] = true;
+	}
+}
+
 fn preset1(state: &mut State) {
+		println!("Preset 1");
+		state.clear();
 		state.grid[1][2] = true;
 		state.grid[2][3] = true;
 		state.grid[3][3] = true;
@@ -271,7 +391,8 @@ fn preset1(state: &mut State) {
 }
 
 fn preset2(state: &mut State) {
-
+	println!("Preset 2");
+	state.clear();
 	state.grid[1][2] = true;
 	state.grid[2][3] = true;
 	state.grid[3][3] = true;
@@ -319,11 +440,4 @@ fn preset2(state: &mut State) {
 	state.grid[15][3] = true;
 	state.grid[20][12] = true;
 
-}
-fn preset3(state: &mut State) {
-	for _ in 0..500 {
-		let x = rand::thread_rng().gen_range(0..40);
-		let y = rand::thread_rng().gen_range(0..40);
-		state.grid[x][y] = true;
-	}
 }
