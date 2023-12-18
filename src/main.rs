@@ -80,10 +80,10 @@ impl State {
 	fn rules(&mut self){
 		//Conways Game of Life
 		/*Rules:
-				1. live cell < 2 live neighbours dies
-				2. live cell > 3 live neighbours dies
-				3. live cell == 2 or 3 live neighbours lives
-				4. dead cell == 3 live neighbours lives
+				1. live cell < 2 live neighbours then lc dies
+				2. live cell > 3 live neighbours then lc dies
+				3. live cell == 2 or 3 live neighbours then lc lives
+				4. dead cell == 3 live neighbours then dc lives
 		*/
 		let mut new_grid = self.grid.clone();
 		for (i,row) in self.grid.iter().enumerate()  {
@@ -126,6 +126,7 @@ impl State {
 
 	fn next(&mut self) {
 			println!("Next button pressed");
+			self.rules();
 	}
 
 	fn clear(&mut self) {
