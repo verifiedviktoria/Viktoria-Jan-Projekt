@@ -1,5 +1,5 @@
 use ggez::{
-	conf::WindowMode,event::{self,EventHandler},graphics::{self,Color,DrawMode,Mesh,Rect,Text},mint::Point2,Context,ContextBuilder,GameError,GameResult
+	conf::WindowMode,event::{self,EventHandler},graphics::{self,Color,DrawMode,Mesh,Rect,Text,MeshBuilder,DrawParam},mint::Point2,Context,ContextBuilder,GameError,GameResult
 };
 use rand::{Rng};
 use std::time::{Duration, SystemTime};
@@ -25,7 +25,7 @@ const LINE_COLOR: Color = Color {
 const TEXT_COLOR: Color = Color::BLACK;
 
 // Menu
-const BUTTON_COLOR: Color = Color::new(0.827, 0.827, 0.827, 1.0);
+const BUTTON_COLOR: Color = Color::new(0.527, 0.527, 0.527, 1.0);
 const BUTTON_WIDTH: f32 = 5.0 * CELL_SIZE.0;
 const BUTTON_HEIGHT: f32 = 2.0 * CELL_SIZE.1;
 const MENU_START: f32 = WINDOW_SIZE.1 - MENU_SIZE * CELL_SIZE.1;
@@ -37,7 +37,8 @@ const CLEAR_X: f32 = WINDOW_SIZE.0/2.0 + 2.0*BUTTON_WIDTH;
 struct State {
 	grid: Vec<Vec<bool>>,
 	fps: u32, 
-	running: bool, 
+	running: bool,
+	color: Vec<Vec<Color>>,
 	drawn: bool, // true if static objects have been drawn
 	mouse_down: bool,
 	mouse_up: bool,
@@ -47,8 +48,9 @@ impl State {
 	pub fn new() -> Self {
 		State {
 			grid: vec![vec![false; GRID_SIZE.1 as usize]; GRID_SIZE.0 as usize],
-			fps: 1,
+			fps: 0,
 			running: false,
+			color: vec![vec![Color::BLACK; GRID_SIZE.1 as usize]; GRID_SIZE.0 as usize],
 			drawn: false,
 			mouse_down: false,
 			mouse_up: false,
@@ -98,6 +100,7 @@ impl State {
 									//cell dies
 									// *col = false;
 									new_grid[i][j] = false;
+
 							} else if count_n > 3 {
 									//cell dies
 									// *col = false;
@@ -139,6 +142,9 @@ impl EventHandler<GameError> for State{
 
 	fn update(&mut self, ctx: &mut ggez::Context) -> Result<(),GameError> {
 		if self.running {
+			if self.fps !=0 {
+				sleep(Duration::from_millis(1000/self.fps as u64));
+			}			
 			self.rules();
 		}
 		// self.grid[3][4] ^= true;
@@ -148,77 +154,71 @@ impl EventHandler<GameError> for State{
 	}
 
 	fn draw(&mut self, ctx: &mut Context) -> GameResult {
-		graphics::clear(ctx, BG_COLOR);
-		// Draw the cells
-		for i in 0..GRID_SIZE.0 as usize {
-			for j in 0..GRID_SIZE.1 as usize {
-				if self.grid[i][j] {
-					let rect = Mesh::new_rectangle(
-						ctx,
-						DrawMode::fill(),
-						Rect::new(						// CELL BLACK
-							i as f32 * CELL_SIZE.0,
-							j as f32 * CELL_SIZE.1,
-							CELL_SIZE.0,
-							CELL_SIZE.1,
-						),
-						CELL_COLOR,
-					)?;
-					graphics::draw(ctx, &rect, (Point2 { x: 0.0, y: 0.0 },))?;
-				}
-			}
-		}
+		if !self.drawn {graphics::clear(ctx, BG_COLOR);}
 
-		// let text = Text::new(self.fps.to_string());
-		// graphics::draw(ctx, &text, (Point2 { x: 0.0, y: 2.0 }, TEXT_COLOR))?; //NUMBER
+		// Create a mesh builder to build the filled cells
+		let mut mesh_builder = MeshBuilder::new();
+
+		// Build the filled cells
+		for i in 0..GRID_SIZE.0 as usize {
+				for j in 0..GRID_SIZE.1 as usize {
+						if self.grid[i][j] {
+								mesh_builder.rectangle(
+										DrawMode::fill(),
+										Rect::new(
+												i as f32 * CELL_SIZE.0,
+												j as f32 * CELL_SIZE.1,
+												CELL_SIZE.0,
+												CELL_SIZE.1,
+										),
+										self.color[i][j],
+								).expect("Error building mesh");
+						}
+				}
+		}
+		// Build the mesh for filled cells
+		let filled_cells_mesh = mesh_builder.build(ctx)?;
+
+		// Draw the filled cells
+		graphics::draw(ctx, &filled_cells_mesh, DrawParam::default())?;
+
 		
 		if !self.drawn {
-			// Draw the grid
-			for i in 0..GRID_SIZE.0 as usize {
-				for j in 0..GRID_SIZE.1 as usize {	
-					if j == 0 {
-						continue;
-					}
-	
-					let line = Mesh::new_line(
-						ctx,
-						&vec![
-							Point2 {
-								x: 0.0,
-								y: j as f32 * CELL_SIZE.1,
-							},
-							Point2 {
-								x: WINDOW_SIZE.0,
-								y: j as f32 * CELL_SIZE.1,
-							},
-						],
-						LINE_WIDTH,
-						LINE_COLOR,
+			// Create a mesh builder to build the grid
+			let mut mesh_builder = MeshBuilder::new();
+
+			// Build horizontal lines
+			for j in 1..(GRID_SIZE.1+1.0) as usize {
+					let y = j as f32 * CELL_SIZE.1;
+					mesh_builder.line(
+							&[
+									Point2 { x: 0.0, y },
+									Point2 { x: WINDOW_SIZE.0, y },
+							],
+							LINE_WIDTH,
+							LINE_COLOR,
 					)?;
-					graphics::draw(ctx, &line, (Point2 { x: 0.0, y: 0.0 },))?;
-				}
-	
-				if i == 0 {
-					continue;
-				}
-	
-				let line = Mesh::new_line(
-					ctx,
-					&vec![
-						Point2 {
-							x: i as f32 * CELL_SIZE.0,
-							y: 0.0,
-						},
-						Point2 {
-							x: i as f32 * CELL_SIZE.0,
-							y: WINDOW_SIZE.1-MENU_SIZE*CELL_SIZE.1,
-						},
-					],
-					LINE_WIDTH,
-					LINE_COLOR,
-				)?;
-				graphics::draw(ctx, &line, (Point2 { x: 0.0, y: 0.0 },))?;
 			}
+
+			// Build vertical lines
+			for i in 1..GRID_SIZE.0 as usize {
+					let x = i as f32 * CELL_SIZE.0;
+					mesh_builder.line(
+							&[
+									Point2 { x, y: 0.0 },
+									Point2 { x, y: MENU_START },
+							],
+							LINE_WIDTH,
+							LINE_COLOR,
+					)?;
+			}
+
+			// Build the mesh
+			let grid_mesh = mesh_builder.build(ctx)?;
+
+			// Draw the grid
+			graphics::draw(ctx, &grid_mesh, DrawParam::default())?;
+
 
 			// Draw the menu section with buttons
 			// Create text for buttons
@@ -256,7 +256,7 @@ impl EventHandler<GameError> for State{
 
 			graphics::draw(ctx, &button_clear, (Point2 { x: 0.0, y: 0.0 },))?;
 			graphics::draw(ctx, &clear_button_text, (Point2 { x: CLEAR_X + 0.3 * BUTTON_WIDTH, y: MENU_START + 0.5 * CELL_SIZE.1 },))?;
-			self.drawn = true
+			self.drawn = false
 		}
 
 		graphics::present(ctx)?;
@@ -325,9 +325,12 @@ impl EventHandler<GameError> for State{
 				KeyCode::Key1 => preset1(self),
 				KeyCode::Key2 => preset2(self),
 				KeyCode::Key3 => preset3(self),
-				KeyCode::Key4 => self.fps = 1,
-				KeyCode::Key5 => self.fps = 5,
-				KeyCode::Key6 => self.fps = 2,
+				KeyCode::Key4 => self.fps = 0,
+				KeyCode::Key5 => self.fps = 1,
+				KeyCode::Key6 => self.fps = 4,
+				KeyCode::Key7 => change_color(self,"black"),
+				KeyCode::Key8 => change_color(self,"custom1"),
+				KeyCode::Key9 => change_color(self, "red"),
 				_ => (),
 		}
 	}
@@ -346,6 +349,31 @@ fn main() -> GameResult {
 		.build()?;
 
 	event::run(ctx, event_loop, state);
+}
+
+fn change_color(state: &mut State, c: &str) {
+	let mut color = Color::BLACK;
+	println!("Color changed");
+	if c == "red" {
+		color = Color::RED;
+		for i in 0..GRID_SIZE.0 as usize {
+			for j in 0..GRID_SIZE.1 as usize {
+				state.color[i][j] = color;
+			}
+		}
+	}else if c == "custom1" {
+		for i in 0..GRID_SIZE.0 as usize {
+			for j in 0..GRID_SIZE.1 as usize {
+				state.color[i][j] = Color::new(i as f32/GRID_SIZE.0,j as f32/GRID_SIZE.1,(j+i) as f32 /(GRID_SIZE.0+GRID_SIZE.1),1.0); // CELL_COLOR,
+			}
+		}
+	}else {
+		for i in 0..GRID_SIZE.0 as usize {
+			for j in 0..GRID_SIZE.1 as usize {
+				state.color[i][j] = CELL_COLOR;
+			}
+		}
+	}
 }
 
 fn preset3(state: &mut State) {
