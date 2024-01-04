@@ -256,7 +256,7 @@ impl EventHandler<GameError> for State{
 
 			graphics::draw(ctx, &button_clear, (Point2 { x: 0.0, y: 0.0 },))?;
 			graphics::draw(ctx, &clear_button_text, (Point2 { x: CLEAR_X + 0.3 * BUTTON_WIDTH, y: MENU_START + 0.5 * CELL_SIZE.1 },))?;
-			self.drawn = false;
+			self.drawn = true
 		}
 
 		graphics::present(ctx)?;
